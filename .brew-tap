@@ -1,0 +1,4 @@
+formula=keychain-tools
+description=macOSキーチェーン操作用CLIツール群
+homepage=https://github.com/aromarious/keychain-tools
+license=MIT
