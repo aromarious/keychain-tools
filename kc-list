@@ -7,4 +7,4 @@ if [ -z "${APP_NAME:-}" ]; then
     exit 1
 fi
 
-security dump-keychain 2>/dev/null | grep -o "\"$APP_NAME\".*" | cut -d'"' -f4 | sort -u
+security dump-keychain 2>/dev/null | grep -B 5 "acct.*=\"$APP_NAME\"" | grep "0x00000007" | sed 's/.*"\(.*\)".*/\1/' | sort -u
