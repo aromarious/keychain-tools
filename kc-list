@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [ -z "${APP_NAME:-}" ]; then
+    echo "Error: APP_NAME environment variable is not set" >&2
+    exit 1
+fi
+
+security dump-keychain 2>/dev/null | grep -o "\"$APP_NAME\".*" | cut -d'"' -f4 | sort -u

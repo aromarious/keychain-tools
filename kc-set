@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [ -z "${APP_NAME:-}" ]; then
+    echo "Error: APP_NAME environment variable is not set" >&2
+    exit 1
+fi
+
+if [ $# -ne 2 ]; then
+    echo "Usage: kc-set KEY VALUE" >&2
+    exit 1
+fi
+
+KEY="$1"
+VALUE="$2"
+
+security delete-generic-password -a "$APP_NAME" -s "$KEY" 2>/dev/null || true
+security add-generic-password -a "$APP_NAME" -s "$KEY" -w "$VALUE"
+
+echo "Successfully set $KEY for $APP_NAME"
