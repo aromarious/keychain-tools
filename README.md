@@ -79,6 +79,23 @@ kc-dup portfolio02 MOTHERDUCK_TOKEN
 - 現在のアプリの同名キーを削除（エラー無視）
 - 現在のアプリに値を追加
 
+#### kc-delete - 値の削除
+
+```bash
+kc-delete KEY
+```
+
+現在の`APP_NAME`から指定したキーを削除します。
+
+例：
+```bash
+kc-delete OLD_API_KEY
+```
+
+内部的には以下を実行：
+- キーの存在を確認
+- キーが存在する場合のみ削除
+
 ## shell補完
 
 ### zsh
@@ -119,7 +136,7 @@ _kc_dup_complete() {
     esac
 }
 
-compdef _kc_complete kc-get kc-set
+compdef _kc_complete kc-get kc-set kc-delete
 compdef _kc_dup_complete kc-dup
 ```
 
@@ -160,7 +177,7 @@ _kc_dup_complete() {
     esac
 }
 
-complete -F _kc_complete kc-get kc-set
+complete -F _kc_complete kc-get kc-set kc-delete
 complete -F _kc_dup_complete kc-dup
 ```
 

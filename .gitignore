@@ -5,3 +5,4 @@ context*.json
 .env*
 latest-release.md
 dist
+CLAUDE.local.md
