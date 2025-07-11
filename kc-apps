@@ -3,4 +3,121 @@
 set -euo pipefail
 
 # List all unique APP_NAMEs (account names) from keychain
-security dump-keychain 2>/dev/null | grep "acct.*=" | sed 's/.*acct.*="\([^"]*\)".*/\1/' | sort -u
+# Filter out system entries, WiFi networks, and keep only user-defined app names
+
+# Use awk to properly parse the keychain structure and filter out WiFi/system entries
+security dump-keychain 2>/dev/null | awk '
+BEGIN {
+    in_entry = 0
+    acct = ""
+    desc = ""
+    svce = ""
+}
+
+# New entry starts
+/^keychain:/ || /^class:/ {
+    # Process previous entry if it exists
+    if (in_entry && acct != "" && desc != "AirPort network password" && svce != "AirPort" && svce != "WiFiAnalytics") {
+        # Filter out system entries and keep only user-defined app names
+        if (acct !~ /^[0-9a-fA-F]*$/ &&
+            acct !~ /^[0-9A-F-]*$/ &&
+            acct !~ /.*[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:.*/ &&
+            acct !~ /.*[Ww][Ii]-?[Ff][Ii].*/ &&
+            acct !~ /^Apple.*/ &&
+            acct !~ /^com\.apple\..*/ &&
+            acct !~ /^Cloud.*/ &&
+            acct !~ /^Random.*/ &&
+            acct !~ /^Public.*/ &&
+            acct !~ /^handoff.*/ &&
+            acct !~ /^iPhone.*/ &&
+            acct !~ /^Siri.*/ &&
+            acct !~ /.*Root.*/ &&
+            acct !~ /^6DCA3248.*/ &&
+            acct !~ /^dap\./ &&
+            acct !~ /^CT / &&
+            acct !~ /^SSID-/ &&
+            acct !~ /^TP-Link/ &&
+            acct !~ /^at_/ &&
+            acct !~ /FMFDStoreControllerKey/ &&
+            acct !~ /lastKnownFaceTimeCallerID/ &&
+            acct !~ /registeredProviders/ &&
+            acct !~ /Window Bitmap Encryption/ &&
+            acct !~ /Local Device Identifier/ &&
+            acct !~ /Non Connectable identity/ &&
+            acct !~ /Microsoft Office Identities/ &&
+            acct !~ /^kCFA/ &&
+            length(acct) < 50 &&
+            acct !~ /^[a-z]{50,}$/ &&
+            acct !~ /Akamai/ &&
+            acct !~ /Fastly/) {
+            print acct
+        }
+    }
+
+    # Reset for new entry
+    in_entry = 1
+    acct = ""
+    desc = ""
+    svce = ""
+}
+
+# Extract account name
+/"acct"<blob>="/ {
+    gsub(/.*"acct"<blob>="/, "", $0)
+    gsub(/".*/, "", $0)
+    acct = $0
+}
+
+# Extract description
+/"desc"<blob>="/ {
+    gsub(/.*"desc"<blob>="/, "", $0)
+    gsub(/".*/, "", $0)
+    desc = $0
+}
+
+# Extract service
+/"svce"<blob>="/ {
+    gsub(/.*"svce"<blob>="/, "", $0)
+    gsub(/".*/, "", $0)
+    svce = $0
+}
+
+END {
+    # Process final entry
+    if (in_entry && acct != "" && desc != "AirPort network password" && svce != "AirPort" && svce != "WiFiAnalytics") {
+        if (acct !~ /^[0-9a-fA-F]*$/ &&
+            acct !~ /^[0-9A-F-]*$/ &&
+            acct !~ /.*[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:.*/ &&
+            acct !~ /.*[Ww][Ii]-?[Ff][Ii].*/ &&
+            acct !~ /^Apple.*/ &&
+            acct !~ /^com\.apple\..*/ &&
+            acct !~ /^Cloud.*/ &&
+            acct !~ /^Random.*/ &&
+            acct !~ /^Public.*/ &&
+            acct !~ /^handoff.*/ &&
+            acct !~ /^iPhone.*/ &&
+            acct !~ /^Siri.*/ &&
+            acct !~ /.*Root.*/ &&
+            acct !~ /^6DCA3248.*/ &&
+            acct !~ /^dap\./ &&
+            acct !~ /^CT / &&
+            acct !~ /^SSID-/ &&
+            acct !~ /^TP-Link/ &&
+            acct !~ /^at_/ &&
+            acct !~ /FMFDStoreControllerKey/ &&
+            acct !~ /lastKnownFaceTimeCallerID/ &&
+            acct !~ /registeredProviders/ &&
+            acct !~ /Window Bitmap Encryption/ &&
+            acct !~ /Local Device Identifier/ &&
+            acct !~ /Non Connectable identity/ &&
+            acct !~ /Microsoft Office Identities/ &&
+            acct !~ /^kCFA/ &&
+            length(acct) < 50 &&
+            acct !~ /^[a-z]{50,}$/ &&
+            acct !~ /Akamai/ &&
+            acct !~ /Fastly/) {
+            print acct
+        }
+    }
+}
+' | sort -u

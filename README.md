@@ -85,13 +85,40 @@ kc-dup portfolio02 MOTHERDUCK_TOKEN
 
 ```bash
 # ~/.zshrc に追加
-_kc_complete() { compadd $(kc-list) }
-_kc_dup_complete() {
-    local context state line
-    _arguments \
-        '1:app name:($(kc-apps))' \
-        '2:key:($(kc-list ${words[2]}))'
+_kc_complete() { 
+    if [[ -n "$APP_NAME" ]]; then
+        local keys
+        keys=($(kc-list 2>/dev/null | tr '\n' ' '))
+        if [[ ${#keys[@]} -gt 0 ]]; then
+            compadd "${keys[@]}"
+        fi
+    fi
 }
+
+_kc_dup_complete() {
+    local state line
+    case $CURRENT in
+        2)
+            # First argument: app name
+            local apps
+            apps=($(kc-apps 2>/dev/null | tr '\n' ' '))
+            if [[ ${#apps[@]} -gt 0 ]]; then
+                compadd "${apps[@]}"
+            fi
+            ;;
+        3)
+            # Second argument: key from specified app
+            if [[ -n "${words[2]}" ]]; then
+                local keys
+                keys=($(kc-list "${words[2]}" 2>/dev/null | tr '\n' ' '))
+                if [[ ${#keys[@]} -gt 0 ]]; then
+                    compadd "${keys[@]}"
+                fi
+            fi
+            ;;
+    esac
+}
+
 compdef _kc_complete kc-get kc-set
 compdef _kc_dup_complete kc-dup
 ```
@@ -102,21 +129,37 @@ compdef _kc_dup_complete kc-dup
 # ~/.bashrc に追加
 _kc_complete() {
     local cur="${COMP_WORDS[COMP_CWORD]}"
-    COMPREPLY=( $(compgen -W "$(kc-list)" -- "$cur") )
+    if [[ -n "$APP_NAME" ]]; then
+        local keys
+        keys=$(kc-list 2>/dev/null | paste -sd ' ' -)
+        if [[ -n "$keys" ]]; then
+            COMPREPLY=( $(compgen -W "$keys" -- "$cur") )
+        fi
+    fi
 }
+
 _kc_dup_complete() {
     local cur="${COMP_WORDS[COMP_CWORD]}"
     case $COMP_CWORD in
         1)
-            COMPREPLY=( $(compgen -W "$(kc-apps)" -- "$cur") )
+            local apps
+            apps=$(kc-apps 2>/dev/null | paste -sd ' ' -)
+            if [[ -n "$apps" ]]; then
+                COMPREPLY=( $(compgen -W "$apps" -- "$cur") )
+            fi
             ;;
         2)
-            if [ -n "${COMP_WORDS[1]}" ]; then
-                COMPREPLY=( $(compgen -W "$(kc-list "${COMP_WORDS[1]}")" -- "$cur") )
+            if [[ -n "${COMP_WORDS[1]}" ]]; then
+                local keys
+                keys=$(kc-list "${COMP_WORDS[1]}" 2>/dev/null | paste -sd ' ' -)
+                if [[ -n "$keys" ]]; then
+                    COMPREPLY=( $(compgen -W "$keys" -- "$cur") )
+                fi
             fi
             ;;
     esac
 }
+
 complete -F _kc_complete kc-get kc-set
 complete -F _kc_dup_complete kc-dup
 ```
@@ -144,6 +187,38 @@ kc-set API_KEY "sk-..."
 - `APP_NAME`環境変数が未設定の場合、エラーメッセージを表示して終了
 - 引数の数が不正な場合、使用方法を表示して終了
 - `kc-get`で存在しないキーを指定した場合、securityコマンドのエラーが表示
+
+## 補完のデバッグ
+
+もし補完がうまく動作しない場合は、以下のデバッグ用スクリプトで問題を特定できます：
+
+### zsh デバッグ用
+
+```bash
+# デバッグ用の簡易補完（~/.zshrc に一時的に追加）
+_kc_debug() {
+    echo "Debug: CURRENT=$CURRENT, words=(${words[@]})" >&2
+    case $CURRENT in
+        2) compadd portfolio01 portfolio02 test-app ;;
+        3) compadd TEST_KEY SECRET_KEY API_KEY ;;
+    esac
+}
+compdef _kc_debug kc-dup
+```
+
+### bash デバッグ用
+
+```bash
+# デバッグ用の簡易補完（~/.bashrc に一時的に追加）
+_kc_debug_bash() {
+    echo "Debug: CWORD=$COMP_CWORD, WORDS=(${COMP_WORDS[@]})" >&2
+    case $COMP_CWORD in
+        1) COMPREPLY=( portfolio01 portfolio02 test-app ) ;;
+        2) COMPREPLY=( TEST_KEY SECRET_KEY API_KEY ) ;;
+    esac
+}
+complete -F _kc_debug_bash kc-dup
+```
 
 ## ライセンス
 
