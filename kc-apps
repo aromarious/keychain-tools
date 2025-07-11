@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# List all unique APP_NAMEs (account names) from keychain
+security dump-keychain 2>/dev/null | grep "acct.*=" | sed 's/.*acct.*="\([^"]*\)".*/\1/' | sort -u

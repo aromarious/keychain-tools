@@ -2,9 +2,14 @@
 
 set -euo pipefail
 
-if [ -z "${APP_NAME:-}" ]; then
-    echo "Error: APP_NAME environment variable is not set" >&2
+# If an argument is provided, use it as the APP_NAME, otherwise use the environment variable
+if [ $# -eq 1 ]; then
+    TARGET_APP_NAME="$1"
+elif [ -n "${APP_NAME:-}" ]; then
+    TARGET_APP_NAME="$APP_NAME"
+else
+    echo "Error: APP_NAME environment variable is not set and no argument provided" >&2
     exit 1
 fi
 
-security dump-keychain 2>/dev/null | grep -B 5 "acct.*=\"$APP_NAME\"" | grep "0x00000007" | sed 's/.*"\(.*\)".*/\1/' | sort -u
+security dump-keychain 2>/dev/null | grep -B 5 "acct.*=\"$TARGET_APP_NAME\"" | grep "0x00000007" | sed 's/.*"\(.*\)".*/\1/' | sort -u

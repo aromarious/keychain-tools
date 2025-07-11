@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [ -z "${APP_NAME:-}" ]; then
+    echo "Error: APP_NAME environment variable is not set" >&2
+    exit 1
+fi
+
+if [ $# -ne 2 ]; then
+    echo "Usage: kc-dup SOURCE_APP_NAME KEY" >&2
+    exit 1
+fi
+
+SOURCE_APP_NAME="$1"
+KEY="$2"
+
+# Get the value from the source app
+VALUE=$(security find-generic-password -a "$SOURCE_APP_NAME" -s "$KEY" -w 2>/dev/null || {
+    echo "Error: Key '$KEY' not found for app '$SOURCE_APP_NAME'" >&2
+    exit 1
+})
+
+# Set the value for the current app (delete existing if any)
+security delete-generic-password -a "$APP_NAME" -s "$KEY" 2>/dev/null || true
+security add-generic-password -a "$APP_NAME" -s "$KEY" -w "$VALUE"
+
+echo "Successfully copied $KEY from $SOURCE_APP_NAME to $APP_NAME"
