@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [ -z "${APP_NAME:-}" ]; then
+    echo "Error: APP_NAME environment variable is not set" >&2
+    exit 1
+fi
+
+if [ $# -ne 1 ]; then
+    echo "Usage: kc-delete KEY" >&2
+    echo "Deletes a specific key from the current APP_NAME" >&2
+    exit 1
+fi
+
+KEY="$1"
+
+# Check if the key exists first
+if ! security find-generic-password -a "$APP_NAME" -s "$KEY" -w 2>/dev/null >/dev/null; then
+    echo "Error: Key '$KEY' not found for app '$APP_NAME'" >&2
+    exit 1
+fi
+
+# Delete the key
+security delete-generic-password -a "$APP_NAME" -s "$KEY" 2>/dev/null || {
+    echo "Error: Failed to delete key '$KEY' for app '$APP_NAME'" >&2
+    exit 1
+}
+
+echo "Successfully deleted $KEY from $APP_NAME"
